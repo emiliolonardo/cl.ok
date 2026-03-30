@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dos-primary: #0000ff;
+  --dos-accent: #00ffff;
+  --dos-bg: #fcfcfc;
+  --dos-fg: #000016;
+  --dos-panel: #f3f7ff;
+  --dos-line: rgba(0, 0, 22, 0.08);
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-condensed: "IBM Plex Sans Condensed", sans-serif;
+  --font-display: "DOS_Pixelcity", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--dos-bg);
+  color: var(--dos-fg);
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
