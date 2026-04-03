@@ -67,7 +67,12 @@ pnpm install
 pnpm dev
 ```
 
+L'app web viene avviata di default su `http://localhost:5466` (redirect automatico a `/dashboard`).
+
 Comandi disponibili:
 - `pnpm dev`
+- `pnpm dev:default-port` (usa la porta standard Next, tipicamente `3000`)
 - `pnpm build`
 - `pnpm lint`
+
+Questo workspace usa `pnpm` come package manager unico (`pnpm-workspace.yaml` + `packageManager` in root). Evitare `npm install` per non generare lockfile incoerenti.
