@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import {
   Button,
   Card,
@@ -8,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -15,6 +17,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui";
+import { useProjectCatalog } from "@/features/project-catalog/use-project-catalog";
 import { formatDuration, type TimerStatus, useLiveTimer } from "@/features/live-timer/use-live-timer";
 import { formatDateTime } from "@/features/time-entries/metrics";
 
@@ -47,9 +50,89 @@ export default function Page() {
     clearEntries
   } = useLiveTimer();
 
+  const { projects, tasks, isHydrated: isCatalogHydrated } = useProjectCatalog();
+
+  const tasksForSelectedProject = useMemo(
+    () => tasks.filter((task) => task.projectId === draft.projectId),
+    [draft.projectId, tasks]
+  );
+
+  useEffect(() => {
+    if (!draft.project || draft.projectId) {
+      return;
+    }
+
+    const matchingProject = projects.find(
+      (project) => project.name.toLocaleLowerCase() === draft.project.toLocaleLowerCase()
+    );
+
+    if (matchingProject) {
+      updateDraftField("projectId", matchingProject.id);
+    }
+  }, [draft.project, draft.projectId, projects, updateDraftField]);
+
+  useEffect(() => {
+    if (!draft.task || draft.taskId || !draft.projectId) {
+      return;
+    }
+
+    const matchingTask = tasksForSelectedProject.find(
+      (task) => task.name.toLocaleLowerCase() === draft.task.toLocaleLowerCase()
+    );
+
+    if (matchingTask) {
+      updateDraftField("taskId", matchingTask.id);
+    }
+  }, [draft.projectId, draft.task, draft.taskId, tasksForSelectedProject, updateDraftField]);
+
+  const handleProjectSelect = (projectId: string) => {
+    if (!projectId) {
+      updateDraftField("projectId", "");
+      updateDraftField("project", "");
+      updateDraftField("taskId", "");
+      updateDraftField("task", "");
+      return;
+    }
+
+    const selectedProject = projects.find((project) => project.id === projectId);
+    if (!selectedProject) {
+      return;
+    }
+
+    updateDraftField("projectId", selectedProject.id);
+    updateDraftField("project", selectedProject.name);
+
+    const taskStillValid = tasks.some(
+      (task) => task.id === draft.taskId && task.projectId === selectedProject.id
+    );
+
+    if (!taskStillValid) {
+      updateDraftField("taskId", "");
+      updateDraftField("task", "");
+    }
+  };
+
+  const handleTaskSelect = (taskId: string) => {
+    if (!taskId) {
+      updateDraftField("taskId", "");
+      updateDraftField("task", "");
+      return;
+    }
+
+    const selectedTask = tasksForSelectedProject.find((task) => task.id === taskId);
+    if (!selectedTask) {
+      return;
+    }
+
+    updateDraftField("taskId", selectedTask.id);
+    updateDraftField("task", selectedTask.name);
+  };
+
   const isIdle = status === "idle";
   const isRunning = status === "running";
   const isPaused = status === "paused";
+
+  const hasCatalogProjects = projects.length > 0;
 
   return (
     <section className="space-y-6">
@@ -57,7 +140,7 @@ export default function Page() {
         <p className="text-[11px] uppercase tracking-[0.12em] text-dos-primary font-medium">Live Timer</p>
         <h1 className="text-2xl font-semibold text-dos-fg">Time Tracker</h1>
         <p className="text-sm text-dos-fg/70">
-          Traccia il tempo in tempo reale e salva automaticamente le entry nello storico.
+          Traccia il tempo in tempo reale, selezionando progetto e task dal catalogo operativo.
         </p>
       </header>
 
@@ -73,20 +156,80 @@ export default function Page() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              label="Progetto"
-              placeholder="Es. System Prototype"
-              value={draft.project}
-              onChange={(event) => updateDraftField("project", event.target.value)}
-            />
-            <Input
-              label="Task"
-              placeholder="Es. Interface Mapping"
-              value={draft.task}
-              onChange={(event) => updateDraftField("task", event.target.value)}
-            />
-          </div>
+          {!isCatalogHydrated ? <p className="text-sm text-dos-fg/70">Caricamento catalogo progetti...</p> : null}
+
+          {hasCatalogProjects ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Select
+                label="Progetto"
+                value={draft.projectId}
+                onChange={(event) => handleProjectSelect(event.target.value)}
+              >
+                <option value="">Seleziona progetto</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </Select>
+
+              {draft.projectId && tasksForSelectedProject.length > 0 ? (
+                <Select
+                  label="Task"
+                  value={draft.taskId}
+                  onChange={(event) => handleTaskSelect(event.target.value)}
+                >
+                  <option value="">Seleziona task</option>
+                  {tasksForSelectedProject.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.name}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  label="Task"
+                  placeholder="Es. Interface Mapping"
+                  helperText={
+                    draft.projectId
+                      ? "Nessun task disponibile per il progetto selezionato. Inseriscilo manualmente o crealo nel modulo Tasks."
+                      : "Seleziona prima un progetto."
+                  }
+                  value={draft.task}
+                  onChange={(event) => {
+                    updateDraftField("taskId", "");
+                    updateDraftField("task", event.target.value);
+                  }}
+                />
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-dos-fg/70">
+                Nessun progetto configurato. Puoi inserire dati manualmente o creare progetti da Projects.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Progetto"
+                  placeholder="Es. System Prototype"
+                  value={draft.project}
+                  onChange={(event) => {
+                    updateDraftField("projectId", "");
+                    updateDraftField("project", event.target.value);
+                  }}
+                />
+                <Input
+                  label="Task"
+                  placeholder="Es. Interface Mapping"
+                  value={draft.task}
+                  onChange={(event) => {
+                    updateDraftField("taskId", "");
+                    updateDraftField("task", event.target.value);
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           <Input
             label="Nota (opzionale)"

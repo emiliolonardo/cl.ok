@@ -19,6 +19,8 @@ interface ParsedState {
 export function createInitialTimerState(): TimerState {
   return {
     draft: {
+      projectId: "",
+      taskId: "",
       project: "",
       task: "",
       note: ""
@@ -67,6 +69,8 @@ function toEntry(value: unknown): TimeEntry | null {
 
   return {
     id,
+    projectId: toText(value.projectId),
+    taskId: toText(value.taskId),
     project: toText(value.project),
     task: toText(value.task),
     note: toText(value.note),
@@ -93,6 +97,8 @@ export function readTimerStateFromStorage(): TimerState {
 
     const draftSource = isRecord(parsed.draft) ? parsed.draft : {};
     const parsedDraft: TimerDraft = {
+      projectId: toText(draftSource.projectId),
+      taskId: toText(draftSource.taskId),
       project: toText(draftSource.project),
       task: toText(draftSource.task),
       note: toText(draftSource.note)

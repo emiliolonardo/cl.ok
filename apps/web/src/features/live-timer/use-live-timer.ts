@@ -178,6 +178,8 @@ export function useLiveTimer() {
 
       const entry: TimeEntry = {
         id: createEntryId(),
+        projectId: previous.draft.projectId.trim(),
+        taskId: previous.draft.taskId.trim(),
         project: previous.draft.project.trim() || "General",
         task: previous.draft.task.trim() || "Untitled task",
         note: previous.draft.note.trim(),

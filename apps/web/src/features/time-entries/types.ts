@@ -4,6 +4,8 @@ export const MAX_TIME_ENTRIES = 50;
 export type TimerStatus = "idle" | "running" | "paused";
 
 export interface TimerDraft {
+  projectId: string;
+  taskId: string;
   project: string;
   task: string;
   note: string;
@@ -11,6 +13,8 @@ export interface TimerDraft {
 
 export interface TimeEntry {
   id: string;
+  projectId: string;
+  taskId: string;
   project: string;
   task: string;
   note: string;
